@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "ignoreDeprecations": "6.0",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "strict": true,
     "esModuleInterop": true,
     "rootDir": "src",
