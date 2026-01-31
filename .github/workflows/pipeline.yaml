@@ -32,10 +32,44 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Zip project
+      # - name: Zip project
+      #   run: |
+      #     cd api
+      #     zip -r ../deployment.zip dist node_modules prisma package.json
+      - name: Install deps (dev) for build
+        run: npm ci
+        working-directory: api
+
+      - name: Build
+        run: npm run build
+        working-directory: api
+
+      # (Opcional) Prisma generate aqui só pra validar no CI,
+      # mas o ideal é gerar dentro do pacote final (abaixo)
+
+      - name: Create clean prod package
         run: |
-          cd api
-          zip -r ../deployment.zip dist node_modules prisma package.json
+          rm -rf package
+          mkdir -p package
+
+          # copia o que roda em produção
+          cp -R api/dist package/dist
+          cp -R api/prisma package/prisma
+          cp api/package.json package/package.json
+          cp api/package-lock.json package/package-lock.json
+
+          # instala SOMENTE dependências de produção
+          cd package
+          npm ci --omit=dev
+
+          # gera o prisma client/engines dentro do pacote final (com URL do Neon)
+          DATABASE_URL="${{ secrets.DATABASE_URL }}" npx prisma generate
+
+          # zipa o pacote final
+          zip -r ../deployment.zip .
+
+      - name: Check zip size
+        run: ls -lh deployment.zip && du -h deployment.zip
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
