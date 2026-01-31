@@ -6,7 +6,6 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    environment: AWS_ACCESS_KEY_ID
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,56 +19,11 @@ jobs:
         run: npm install
         working-directory: api
 
-      - name: Generate prisma client
-        run: npx prisma generate
-        working-directory: api
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Apply all pending migrations to the database
         run: npx prisma migrate deploy
         working-directory: api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      # - name: Zip project
-      #   run: |
-      #     cd api
-      #     zip -r ../deployment.zip dist node_modules prisma package.json
-      - name: Install deps (dev) for build
-        run: npm ci
-        working-directory: api
-
-      - name: Build
-        run: npm run build
-        working-directory: api
-
-      # (Opcional) Prisma generate aqui só pra validar no CI,
-      # mas o ideal é gerar dentro do pacote final (abaixo)
-
-      - name: Create clean prod package
-        run: |
-          rm -rf package
-          mkdir -p package
-
-          # copia o que roda em produção
-          cp -R api/dist package/dist
-          cp -R api/prisma package/prisma
-          cp api/package.json package/package.json
-          cp api/package-lock.json package/package-lock.json
-
-          # instala SOMENTE dependências de produção
-          cd package
-          npm ci --omit=dev
-
-          # gera o prisma client/engines dentro do pacote final (com URL do Neon)
-          DATABASE_URL="${{ secrets.DATABASE_URL }}" npx prisma generate
-
-          # zipa o pacote final
-          zip -r ../deployment.zip .
-
-      - name: Check zip size
-        run: ls -lh deployment.zip && du -h deployment.zip
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -78,16 +32,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload artifact to S3
-        run: |
-          aws s3 cp deployment.zip s3://challenge-api-x-deploy/deployment.zip
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Deploy to AWS LAMBDA
-        uses: appleboy/lambda-action@v0.2.0
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_REGION }}
-          function_name: gorush
-          s3_bucket: challenge-api-x-deploy
-          s3_key: deployment.zip
+      - name: Build and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api/Dockerfile api
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update Lambda function image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+          LAMBDA_FUNCTION_NAME: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+        run: |
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --image-uri "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
