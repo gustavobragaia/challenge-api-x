@@ -37,6 +37,13 @@ jobs:
           cd api
           zip -r ../deployment.zip dist node_modules prisma package.json
 
+      - name: Check zip size
+        run: ls -lh deployment.zip && du -h deployment.zip
+
+      - name: Show biggest folders
+        run: |
+          du -hd1 api/node_modules | sort -hr | head -n 20
+
       - name: Deploy to AWS LAMBDA
         uses: appleboy/lambda-action@v0.2.0
         with:
