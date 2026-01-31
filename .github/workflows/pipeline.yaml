@@ -27,5 +27,5 @@ jobs:
           file: ./api/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/challenge-api-x:latest
-            ghcr.io/${{ github.repository_owner }}/challenge-api-x:${{ github.sha }}
+            ghcr.io/gustavobragaia/challenge-api-x:latest
+            ghcr.io/gustavobragaia/challenge-api-x:${{ github.sha }}
