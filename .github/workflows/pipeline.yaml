@@ -37,12 +37,16 @@ jobs:
           cd api
           zip -r ../deployment.zip dist node_modules prisma package.json
 
-      - name: Check zip size
-        run: ls -lh deployment.zip && du -h deployment.zip
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Show biggest folders
+      - name: Upload artifact to S3
         run: |
-          du -hd1 api/node_modules | sort -hr | head -n 20
+          aws s3 cp deployment.zip s3://challenge-api-x-deploy/deployment.zip
 
       - name: Deploy to AWS LAMBDA
         uses: appleboy/lambda-action@v0.2.0
@@ -51,4 +55,5 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: ${{ secrets.AWS_REGION }}
           function_name: gorush
-          zip_file: deployment.zip
+          s3_bucket: challenge-api-x-deploy
+          s3_key: deployment.zip
