@@ -35,7 +35,7 @@ jobs:
       - name: Zip project
         run: |
           cd api
-          zip -r ../deployment.zip .
+          zip -r ../deployment.zip dist node_modules prisma package.json
 
       - name: Deploy to AWS LAMBDA
         uses: appleboy/lambda-action@v0.2.0
