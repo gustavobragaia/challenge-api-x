@@ -11,9 +11,7 @@ Depois disso vc já é melhor que 80% dos devs que estão por aí como eu posso 
 Etapa A — Local (1–2 dias)
 
 API + Prisma + Auth
-
 Redis cache em 1 endpoint
-
 Dockerfile + compose local (postgres/redis)
 
 Etapa B — CI (meio dia)
