@@ -9,6 +9,7 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# ARG DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 ARG DATABASE_URL="postgresql://neondb_owner:npg_dCh5QNZL7bXP@ep-divine-math-aczd9wjw.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 ENV DATABASE_URL=$DATABASE_URL
 
