@@ -2,6 +2,7 @@ import fastify from 'fastify'
 import { AuthRoutes } from './modules/auth/auth.routes'
 import jwt from "@fastify/jwt";
 import { meRoute } from './modules/me/me.route';
+import { request } from 'node:http';
 
 const server = fastify()
 
@@ -11,6 +12,11 @@ server.register(jwt, {
 server.register(AuthRoutes, {prefix: "/auth"})
 server.register(meRoute)
 
+server.get('/',
+  async (request, reply) => {
+    return {message: "new automatic deploy using GHCR, docker and EC2 made with sucess ¬¬!"}
+  }
+)
 server.get('/ping', async (request, reply) => {
   return 'pong\n'
 })
