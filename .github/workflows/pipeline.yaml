@@ -13,6 +13,7 @@ permissions:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    environment: AWS_ACCESS_KEY_ID
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
