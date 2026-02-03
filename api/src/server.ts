@@ -14,7 +14,7 @@ server.register(meRoute)
 
 server.get('/',
   async (request, reply) => {
-    return {message: "new automatic deploy using GHCR, docker and EC2 made with sucess ¬¬! v3"}
+    return {message: "new automatic deploy using GHCR, docker and EC2 made with sucess ¬¬! all with pipeline, without watcher v4"}
   }
 )
 server.get('/ping', async (request, reply) => {
